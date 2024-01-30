@@ -1,0 +1,150 @@
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <limits.h>
+#include <stdint.h>
+#include <stdbool.h>
+#define N 30
+
+typedef struct Edge {
+    uint8_t src;
+    uint8_t dest;
+    uint8_t weight;
+} Edge;
+
+typedef struct Node {
+    uint8_t dest;
+    uint8_t weight;
+    struct Node* next;
+} Node;
+
+typedef struct Graph {
+    Node** adjList;
+} Graph;
+
+Node* newNode(uint8_t dest, uint8_t weight) {
+    Node* node = (Node*) malloc(sizeof(Node));
+    node->dest = dest;
+    node->weight = weight;
+    node->next = NULL;
+    return node;
+}
+
+Graph* createGraph(Edge edges[], const size_t n) {
+    Graph* graph = (Graph*) malloc(sizeof(Graph));
+    graph->adjList = (Node**) malloc(n * sizeof(Node*));
+    for (uint8_t i = 0; i < n; i++) {
+        graph->adjList[i] = NULL;
+    }
+    for (uint8_t i = 0; i < n; i++) {
+        uint8_t src = edges[i].src;
+        uint8_t dest = edges[i].dest;
+        uint8_t weight = edges[i].weight;
+        Node* node = newNode(dest, weight);
+        node->next = graph->adjList[src];
+        graph->adjList[src] = node;
+    }
+    return graph;
+}
+
+uint8_t minDistance(uint8_t dist[], bool visited[], uint8_t n) {
+    uint8_t minDist = UINT8_MAX;
+    uint8_t minIndex;
+    for (uint8_t i = 0; i < n; i++) {
+        if (!visited[i] && dist[i] <= minDist) {
+            minDist = dist[i];
+            minIndex = i;
+        }
+    }
+    return minIndex;
+}
+
+void dijkstra(Graph* graph, uint8_t start, uint8_t dist[], uint8_t parent[], uint8_t n) {
+    for (uint8_t i = 0; i < n; i++) {
+        parent[i] = UINT8_MAX;
+        dist[i] = UINT8_MAX;
+    }
+    dist[start] = 0;
+    parent[start] = start;
+    bool* visited = (bool*) malloc(n * sizeof(bool));
+    for (uint8_t i = 0; i < n; i++) {
+        visited[i] = false;
+    }
+    for (uint8_t i = 0; i < n - 1; i++) {
+        uint8_t u = minDistance(dist, visited, n);
+        visited[u] = true;
+        Node* node = graph->adjList[u];
+        while (node != NULL) {
+            uint8_t v = node->dest;
+            uint8_t weight = node->weight;
+            if (!visited[v] && dist[u] != UINT8_MAX && dist[u] + weight < dist[v]) {
+                dist[v] = dist[u] + weight;
+                parent[v] = u;
+            }
+            node = node->next;
+        }
+    }
+}
+int main(int argc, char const *argv[]) {
+
+
+
+        // Address value of variables are updated for RISC-V Implementation
+        #define START_POINT         (* (volatile uint8_t * ) 0x02000000)
+        #define END_POINT           (* (volatile uint8_t * ) 0x02000004)
+        #define NODE_POINT          (* (volatile uint8_t * ) 0x02000008)
+        #define CPU_DONE            (* (volatile uint8_t * ) 0x0200000c)
+        #define NEXT_DIRECTION      (* (volatile uint8_t * ) 0x02000010)    // 0: North, 1: East, 2: South, 3: West 
+        #define NODE_REACHED        (* (volatile uint8_t * ) 0x02000014)    // for cpu to write
+
+
+
+    // array to store the planned path
+    uint8_t path_planned[32];
+    // index to keep track of the path_planned array
+    uint8_t idx = 0;
+
+
+
+    Edge edges[] = {
+        {0,1,1},{1,2,1},{1,0,1}, {1,29,1}, {2,3,1}, {2,8,1},{2,1,1}, {3,4,2}, {3,28,3},{3,2,1},{4,3,2},{4,5,1},{4,6,2},{5,4,1},{6,4,2},
+        {6,7,2},{7,6,2},{7,8,1},{8,7,1},{8,2,1},{8,9,1},{8,12,1},{9,8,1},{9,10,1},{9,11,1},{10,9,1},{11,9,1},{12,8,1},{12,13,2},
+        {12,19,3},{13,12,2},{13,14,2},{14,13,2},{14,15,1},{14,16,2},{15,14,1},{16,14,2},{16,17,1},{16,18,2},{17,16,1},{18,16,2},
+        {18,19,2},{19,12,3},{19,18,2},{19,20,1},{20,19,1},{20,21,1},{20,24,1},{20,29,1},{21,20,1},{21,22,1},{21,23,1},
+        {22,21,1},{23,21,1},{24,20,1},{24,25,2},{25,24,2},{25,26,2},{26,25,2},{26,27,1},{26,28,2},{27,26,1},{28,26,2},
+        {28,3,3},{28,26,2},{28,29,1},{29,28,1},{29,1,1},{29,20,1}
+    };
+    const size_t n = sizeof(edges)/sizeof(edges[0]);
+
+    Graph* graph = createGraph(edges, n);
+
+    uint8_t dist[N];
+    uint8_t parent[N];
+    dijkstra(graph, START_POINT, dist, parent, n);
+
+    uint8_t i = 0;
+    uint8_t j = END_POINT;
+    while (j != START_POINT) {
+        path_planned[i] = j;
+        j = parent[j];
+        i++;
+    }
+    path_planned[i] = START_POINT;
+    idx = i + 1;
+
+    for (uint8_t i = 0; i < idx / 2; i++) {
+        uint8_t temp = path_planned[i];
+        path_planned[i] = path_planned[idx - i - 1];
+        path_planned[idx - i - 1] = temp;
+    }
+
+
+    for (int i = 0; i < idx; ++i) {
+        NODE_POINT = path_planned[i];
+    }
+
+    CPU_DONE = 1;
+    return 0;
+}
+
