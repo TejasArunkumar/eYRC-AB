@@ -189,8 +189,15 @@ int main(int argc, char const *argv[]) {
         }
     }
 
-for (uint8_t i = 0; i < sizeof(directi)/sizeof(directi[0]); i++) {
-    NEXT_DIRECTION = directi[i];
+for (uint8_t i = 0; i < sizeof(directi)/sizeof(directi[0]); i++)
+ {if(NODE_REACHED==1)
+ {
+        NEXT_DIRECTION = directi[i];
+        NODE_REACHED = 0;
+ }
+    else
+    {
+        i--;
 }
   
     CPU_DONE = 1;
