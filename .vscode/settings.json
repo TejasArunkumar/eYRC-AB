@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "djikstra_c_direction": "c"
+        "djikstra_c_direction": "c",
+        "djikstra_final": "cpp"
     }
 }
