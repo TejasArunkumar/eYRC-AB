@@ -1,6 +1,13 @@
 {
     "files.associations": {
         "djikstra_c_direction": "c",
-        "djikstra_final": "cpp"
+        "djikstra_final": "cpp",
+        "array": "c",
+        "deque": "c",
+        "string": "c",
+        "unordered_map": "c",
+        "vector": "c",
+        "string_view": "c",
+        "initializer_list": "c"
     }
 }
